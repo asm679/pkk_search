@@ -1,8 +1,10 @@
-from typing import List, Tuple, Optional, Union, Any
+from typing import List, Tuple, Optional, Union, Any, Dict
 from shapely.geometry import Point, LineString, LinearRing, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform as shapely_transform
+from shapely.geometry import mapping
 from pyproj import CRS, Transformer
+import json
 
 # Изменяем на абсолютный импорт от корня проекта
 from scripts.data_structures import (
@@ -318,49 +320,149 @@ def calculate_perimeter(
         Периметр в единицах целевой планарной CRS (обычно метры),
         0.0 для Point/LineString, или None если геометрия None или произошла ошибка.
     """
-    if shapely_geom is None:
+    if shapely_geom is None or not shapely_geom.is_valid:
         return None
-
-    # Точки и линии не имеют "периметра" в этом контексте
-    if shapely_geom.geom_type in ["Point", "MultiPoint", "LineString", "MultiLineString"]:
-        return 0.0
-
+    
+    # Для полигонов и мультиполигонов perimeter это exterior.length + sum(interior.length for interior in geom.interiors)
+    # GeometryCollection может содержать полигоны, для которых можно посчитать периметр.
+    # Простая проверка на наличие атрибута length не всегда корректна для периметра.
+    
     geom_to_calculate = shapely_geom
 
     if project_to_planar:
         try:
             source_crs = CRS.from_string(source_crs_str)
             target_crs = CRS.from_string(target_planar_crs_str)
-
-            if source_crs.is_geographic:
-                transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
-                geom_to_calculate = shapely_transform(transformer.transform, shapely_geom)
-            elif source_crs.is_projected and not source_crs.equals(target_crs):
-                print(f"Warning: Source CRS '{source_crs_str}' is projected but does not match target '{target_planar_crs_str}' for perimeter. Reprojecting.")
+            if source_crs != target_crs:
                 transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
                 geom_to_calculate = shapely_transform(transformer.transform, shapely_geom)
         except Exception as e:
-            print(f"Error during CRS transformation for perimeter calculation: {e}")
-            print(f"Calculating perimeter in original CRS '{source_crs_str}' due to transformation error.")
-            # geom_to_calculate остается shapely_geom
-    
+            # print(f"Error transforming geometry for perimeter calculation: {e}")
+            return None # Ошибка трансформации
+
     try:
-        if geom_to_calculate.geom_type == "GeometryCollection":
-            total_perimeter = 0.0
-            for g in geom_to_calculate.geoms:
-                if g.geom_type in ["Polygon", "MultiPolygon"]:
-                    # Рекурсивный вызов, но без повторного перепроецирования
-                    component_perimeter = calculate_perimeter(g, project_to_planar=False)
-                    if component_perimeter is not None:
-                        total_perimeter += component_perimeter
-            return total_perimeter
-        else: # Polygon, MultiPolygon
-            # Свойство .length для Polygon/MultiPolygon возвращает периметр внешней границы.
-            # Для MultiPolygon это сумма периметров внешних границ всех полигонов.
-            # Периметры дыр не учитываются, что обычно и ожидается от "периметра".
-            return geom_to_calculate.length 
+        if geom_to_calculate.geom_type in ['Polygon', 'MultiPolygon']:
+            return geom_to_calculate.length # Для Polygon/MultiPolygon .length это внешний периметр
+        elif geom_to_calculate.geom_type == 'GeometryCollection':
+            total_perimeter = 0
+            for sub_geom in geom_to_calculate.geoms:
+                if sub_geom.geom_type in ['Polygon', 'MultiPolygon']:
+                    # Рекурсивный вызов для полигональных частей GeometryCollection, 
+                    # но уже без перепроецирования, т.к. коллекция уже перепроецирована
+                    sub_perimeter = calculate_perimeter(sub_geom, project_to_planar=False)
+                    if sub_perimeter is not None:
+                        total_perimeter += sub_perimeter
+            return total_perimeter if total_perimeter > 0 else 0.0
+        else:
+            # Для других типов (Point, LineString) периметр не имеет смысла в данном контексте
+            return 0.0
     except Exception as e:
-        print(f"Error calculating perimeter for {geom_to_calculate.geom_type}: {e}")
+        # print(f"Error calculating perimeter: {e}")
         return None
+
+def create_geojson_feature(
+    placemark_data: ExtractedPlacemark, 
+    shapely_geom: Optional[BaseGeometry], 
+    area: Optional[float], 
+    length: Optional[float], 
+    perimeter: Optional[float],
+    precision: int = DEFAULT_PRECISION 
+) -> Dict:
+    """
+    Converts an ExtractedPlacemark and its associated Shapely geometry
+    and calculated metrics into a GeoJSON Feature dictionary.
+
+    Args:
+        placemark_data: The ExtractedPlacemark object.
+        shapely_geom: The corresponding Shapely geometry object.
+        area: Calculated area (in projected units).
+        length: Calculated length (in projected units).
+        perimeter: Calculated perimeter (in projected units).
+        precision: Number of decimal places to round calculated metrics.
+
+    Returns:
+        A dictionary representing a GeoJSON Feature.
+    """
+    properties = {
+        "kml_name": placemark_data.name if placemark_data.name else None,
+        "kml_id": placemark_data.id if placemark_data.id else None,
+        "kml_geometry_type": placemark_data.geometry_type,
+        "shapely_geometry_type": shapely_geom.geom_type if shapely_geom else None,
+        "is_valid": shapely_geom.is_valid if shapely_geom else None,
+    }
+
+    if shapely_geom and not shapely_geom.is_valid:
+        # Пытаемся получить причину невалидности, если доступно
+        try:
+            from shapely.validation import explain_validity
+            properties["validity_reason"] = explain_validity(shapely_geom)
+        except ImportError: # Для старых версий Shapely, где explain_validity может отсутствовать
+            properties["validity_reason"] = "N/A (explain_validity not available)"
+        except Exception: # На случай других ошибок при вызове explain_validity
+            properties["validity_reason"] = "Error explaining validity"
+
+    # Сохраняем метрики, только если они не None и больше 0 (или просто не None для is_valid)
+    # Округляем до указанной точности
+    if area is not None:
+        rounded_area = round(area, precision)
+        if abs(rounded_area) > 1e-9: # Добавляем, если не ноль (с учетом погрешности)
+            properties["calculated_area_sq_units"] = rounded_area
+    
+    if length is not None:
+        rounded_length = round(length, precision)
+        if abs(rounded_length) > 1e-9:
+            properties["calculated_length_units"] = rounded_length
+        
+    if perimeter is not None:
+        rounded_perimeter = round(perimeter, precision)
+        if abs(rounded_perimeter) > 1e-9:
+            properties["calculated_perimeter_units"] = rounded_perimeter
+
+    # Удаляем свойства со значением None для более чистого GeoJSON
+    properties = {k: v for k, v in properties.items() if v is not None}
+
+    feature = {
+        "type": "Feature",
+        "geometry": mapping(shapely_geom) if shapely_geom else None,
+        "properties": properties,
+    }
+    
+    return feature
+
+def save_geojson_feature_collection(features: List[Dict], output_filepath: str, indent: Optional[int] = 2) -> bool:
+    """
+    Saves a list of GeoJSON Feature dictionaries as a FeatureCollection to a .geojson file.
+
+    Args:
+        features: A list of dictionaries, where each dictionary is a GeoJSON Feature.
+        output_filepath: The path to the output .geojson file.
+        indent: Indentation level for pretty-printing the JSON. 
+                Set to None for a compact output.
+
+    Returns:
+        True if saving was successful, False otherwise.
+    """
+    if not output_filepath.lower().endswith(".geojson"):
+        print(f"Warning: Output filepath '{output_filepath}' does not end with .geojson. Saving anyway.")
+        # Можно добавить автоматическое добавление расширения, если его нет:
+        # if not output_filepath.lower().endswith(('.geojson', '.json')):
+        #     output_filepath += '.geojson'
+
+    feature_collection = {
+        "type": "FeatureCollection",
+        "features": features
+    }
+
+    try:
+        with open(output_filepath, 'w', encoding='utf-8') as f:
+            json.dump(feature_collection, f, ensure_ascii=False, indent=indent)
+        # print(f"Successfully saved GeoJSON FeatureCollection to: {output_filepath}") # Убрал принт, CLI будет сам сообщать
+        return True
+    except IOError as e:
+        print(f"Error saving GeoJSON to file '{output_filepath}': {e}")
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred while saving GeoJSON: {e}")
+        return False
 
 # Конец файла, блок if __name__ == '__main__' удален. 

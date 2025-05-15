@@ -1,12 +1,15 @@
 import unittest
 from decimal import Decimal, getcontext
+import json
+import tempfile
+import shutil
 
 # Добавляем путь к родительской директории, чтобы можно было импортировать scripts
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from scripts.geometry_processing import parse_coordinate_string, kml_placemark_to_shapely, DEFAULT_PRECISION, calculate_area, calculate_length, calculate_perimeter
+from scripts.geometry_processing import parse_coordinate_string, kml_placemark_to_shapely, DEFAULT_PRECISION, calculate_area, calculate_length, calculate_perimeter, create_geojson_feature, save_geojson_feature_collection
 from scripts.data_structures import (
     ExtractedPlacemark,
     PointGeom as KmlPoint,
@@ -454,5 +457,165 @@ class TestCalculatePerimeter(unittest.TestCase):
         self.assertIsNone(perimeter, "Perimeter of None geometry should be None")
 
 
+class TestCreateGeoJSONFeature(unittest.TestCase):
+
+    def test_basic_point_feature(self):
+        pm = ExtractedPlacemark(name="Test Point", id="tp01", geometry_type="Point", geometry_data=KmlPoint("10,20"))
+        shapely_geom = Point(10, 20)
+        area, length, perimeter = 0.0, 0.0, 0.0
+        
+        feature = create_geojson_feature(pm, shapely_geom, area, length, perimeter)
+        
+        self.assertEqual(feature["type"], "Feature")
+        self.assertIsNotNone(feature["geometry"])
+        self.assertEqual(feature["geometry"]["type"], "Point")
+        self.assertEqual(feature["geometry"]["coordinates"], (10.0, 20.0))
+        
+        props = feature["properties"]
+        self.assertEqual(props["kml_name"], "Test Point")
+        self.assertEqual(props["kml_id"], "tp01")
+        self.assertEqual(props["kml_geometry_type"], "Point")
+        self.assertEqual(props["shapely_geometry_type"], "Point")
+        self.assertTrue(props["is_valid"])
+        self.assertNotIn("validity_reason", props)
+        # Метрики равны 0, поэтому не должны включаться по умолчанию (если не > 1e-9)
+        self.assertNotIn("calculated_area_sq_units", props)
+        self.assertNotIn("calculated_length_units", props)
+        self.assertNotIn("calculated_perimeter_units", props)
+
+    def test_polygon_feature_with_metrics_and_invalidity(self):
+        pm = ExtractedPlacemark(name="Invalid Poly", id="ip01", geometry_type="Polygon", 
+                                geometry_data=KmlPolygon(KmlLinearRing("0,0 0,1 1,1 1,0 0,1"))) # Данные KML не так важны здесь
+        
+        # Создаем невалидный "bowtie" полигон
+        shell_coords = [(0,0), (10,10), (10,0), (0,10), (0,0)]
+        shapely_geom = Polygon(shell_coords)
+        
+        # Проверим, действительно ли он невалиден для текущей версии Shapely
+        # Если нет, тест нужно будет адаптировать или найти другой способ создания невалидной геометрии
+        # self.assertFalse(shapely_geom.is_valid, "Test setup: Bowtie polygon should be invalid by default")
+
+        area, length, perimeter = 123.456, 0.0, 45.678 # Метрики могут быть любыми для теста свойств
+
+        feature = create_geojson_feature(pm, shapely_geom, area, length, perimeter, precision=2)
+        self.assertEqual(feature["type"], "Feature")
+        self.assertEqual(feature["geometry"]["type"], "Polygon")
+        
+        props = feature["properties"]
+        self.assertEqual(props["kml_name"], "Invalid Poly")
+        self.assertEqual(props["kml_geometry_type"], "Polygon") # Изначальный тип из KML
+        self.assertEqual(props["shapely_geometry_type"], "Polygon")
+        self.assertFalse(props["is_valid"])
+        self.assertIn("validity_reason", props)
+        self.assertTrue(isinstance(props["validity_reason"], str))
+
+        self.assertAlmostEqual(props["calculated_area_sq_units"], 123.46)
+        self.assertNotIn("calculated_length_units", props) # length == 0.0
+        self.assertAlmostEqual(props["calculated_perimeter_units"], 45.68)
+
+    def test_feature_with_none_geometry(self):
+        pm = ExtractedPlacemark(name="No Geom PM", id="ng01", geometry_type="Unknown", geometry_data=None)
+        feature = create_geojson_feature(pm, None, None, None, None)
+        
+        self.assertEqual(feature["type"], "Feature")
+        self.assertIsNone(feature["geometry"])
+        props = feature["properties"]
+        self.assertEqual(props["kml_name"], "No Geom PM")
+        self.assertEqual(props["kml_id"], "ng01")
+        self.assertEqual(props["kml_geometry_type"], "Unknown")
+        self.assertIsNone(props.get("shapely_geometry_type")) # shapely_geom is None
+        self.assertIsNone(props.get("is_valid")) # shapely_geom is None
+        self.assertNotIn("calculated_area_sq_units", props)
+
+    def test_properties_none_values_are_omitted(self):
+        pm = ExtractedPlacemark(name=None, id=None, geometry_type="Point", geometry_data=KmlPoint("1,1"))
+        shapely_geom = Point(1,1)
+        # Все метрики None
+        feature = create_geojson_feature(pm, shapely_geom, None, None, None)
+        props = feature["properties"]
+
+        self.assertNotIn("kml_name", props)
+        self.assertNotIn("kml_id", props)
+        self.assertEqual(props["kml_geometry_type"], "Point")
+        self.assertEqual(props["shapely_geometry_type"], "Point")
+        self.assertTrue(props["is_valid"])
+        self.assertNotIn("calculated_area_sq_units", props)
+        self.assertNotIn("calculated_length_units", props)
+        self.assertNotIn("calculated_perimeter_units", props)
+
+
+class TestSaveGeoJSONFeatureCollection(unittest.TestCase):
+    def setUp(self):
+        # Создаем временную директорию для тестовых файлов
+        self.test_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        # Удаляем временную директорию и ее содержимое
+        shutil.rmtree(self.test_dir)
+
+    def test_save_and_read_geojson(self):
+        test_features = [
+            {
+                "type": "Feature", 
+                "geometry": {"type": "Point", "coordinates": [10, 20]},
+                "properties": {"name": "Feature 1"}
+            },
+            {
+                "type": "Feature", 
+                "geometry": {"type": "LineString", "coordinates": [[0,0], [1,1]]},
+                "properties": {"id": "ls01"}
+            }
+        ]
+        filepath = os.path.join(self.test_dir, "test_output.geojson")
+        
+        # 1. Тест сохранения
+        result = save_geojson_feature_collection(test_features, filepath, indent=2)
+        self.assertTrue(result, "Save function should return True on success")
+        self.assertTrue(os.path.exists(filepath), "GeoJSON file should be created")
+
+        # 2. Тест чтения и проверки содержимого
+        with open(filepath, 'r', encoding='utf-8') as f:
+            loaded_data = json.load(f)
+        
+        self.assertEqual(loaded_data["type"], "FeatureCollection")
+        self.assertEqual(len(loaded_data["features"]), len(test_features))
+        # Сравним индивидуальные features (порядок должен сохраниться)
+        for original_feature, loaded_feature in zip(test_features, loaded_data["features"]):
+            self.assertEqual(original_feature, loaded_feature)
+
+    def test_save_with_no_indent(self):
+        test_features = [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [0,0]}, "properties": {}}]
+        filepath = os.path.join(self.test_dir, "compact.geojson")
+        
+        save_geojson_feature_collection(test_features, filepath, indent=None)
+        self.assertTrue(os.path.exists(filepath))
+
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+            # Проверяем, что нет лишних пробелов или переносов строк, характерных для indent
+            self.assertNotIn("\n  ", content)
+            self.assertNotIn("\n    ", content)
+            # Проверим базовую структуру
+            loaded_data = json.loads(content) # Перепарсим для проверки структуры
+            self.assertEqual(loaded_data["type"], "FeatureCollection")
+            self.assertEqual(len(loaded_data["features"]), 1)
+
+    def test_save_empty_feature_list(self):
+        filepath = os.path.join(self.test_dir, "empty.geojson")
+        save_geojson_feature_collection([], filepath)
+        self.assertTrue(os.path.exists(filepath))
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        self.assertEqual(data, {"type": "FeatureCollection", "features": []})
+
+    def test_save_invalid_path_error(self):
+        # Пытаемся сохранить в несуществующую директорию (IOError ожидается)
+        # (Подавляем вывод ошибок в консоль во время теста, если это возможно/нужно)
+        # В данном случае save_geojson_feature_collection сама печатает ошибку и возвращает False
+        invalid_filepath = os.path.join(self.test_dir, "non_existent_subdir", "error.geojson")
+        result = save_geojson_feature_collection([{"type": "Feature", "properties": {}, "geometry": None}], invalid_filepath)
+        self.assertFalse(result, "Save function should return False for invalid path")
+
+
 if __name__ == '__main__':
-    unittest.main() 
+    unittest.main(argv=['first-arg-is-ignored'], exit=False) 
