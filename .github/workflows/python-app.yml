@@ -1,0 +1,55 @@
+name: Python application test
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # pytest и pytest-cov должны быть в requirements.txt
+
+    - name: Test with pytest
+      run: |
+        python -m pytest --cov=scripts --cov-report=xml --cov-report=term tests/
+        # Возможно, понадобится python -m pytest, если pytest не будет в PATH
+        # Команда для запуска тестов: python -m unittest discover tests
+        # Или конкретные файлы: python -m unittest tests.test_pkk_api_client tests.test_geometry_processing ...
+        # Для pytest: pytest tests/
+        # python -m pytest tests/
+
+    # Опциональный шаг для загрузки отчета о покрытии в Codecov или similar
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} # Необходимо настроить в секретах репозитория
+        slug: asm679/pkk_search # Заменить на свои значения (для приватных репо или если автоопределение не сработает) 
+
+        

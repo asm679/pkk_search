@@ -1,0 +1,103 @@
+KML Document Name (pykml): Test KML Geometries
+Found 6 geometries from placemarks (pykml):
+  Geometry 1:
+    Name: Simple Point
+    ID: pm1
+    Type: Point
+    Coordinates: 10,10,0
+  Geometry 2:
+    Name: Simple LineString
+    ID: pm2
+    Type: LineString
+    Coordinates: 11,11,0 12,12,0 13,13,0
+  Geometry 3:
+    Name: Simple Polygon
+    ID: pm3
+    Type: Polygon
+    Coordinates (Outer): 20,20,0 21,20,0 21,21,0 20,21,0 20,20,0
+  Geometry 4:
+    Name: Polygon with Hole
+    ID: pm4
+    Type: Polygon
+    Coordinates (Outer): 30,30,0 35,30,0 35,35,0 30,35,0 30,30,0
+    Coordinates (Inner 1): 31,31,0 32,31,0 32,32,0 31,32,0 31,31,0
+    Coordinates (Inner 2): 33,33,0 34,33,0 34,34,0 33,34,0 33,33,0
+  Geometry 5:
+    Name: Placemark with LinearRing directly
+    ID: pm5
+    Type: LinearRing
+    Coordinates: 1,1,0 2,1,0 2,2,0 1,2,0 1,1,0
+  Geometry 6:
+    Name: Placemark without Geometry
+    ID: pm6_no_geom
+    Type: Unknown
+    Coordinates: Not applicable (Unknown geometry type)
+
+--- DEBUG LOG (pykml) ---
+Created test file: test_complex_pykml.kml
+
+--- Main Test (pykml): Loading KML: test_complex_pykml.kml ---
+Attempting to load KML with pykml: test_complex_pykml.kml
+Parsing KML bytes with pykml.parser.fromstring...
+pykml parsed. Root object type: <class 'lxml.objectify.ObjectifiedElement'>
+Document found. Name: Test KML Geometries
+--- Inside get_kml_document_name (pykml) ---
+Found Document directly under kml_root.
+Container name: 'Test KML Geometries'
+Document name (pykml): 'Test KML Geometries'
+Starting geometry extraction (pykml) from root's Document: ObjectifiedElement
+--- Inside extract_placemark_geometries_recursive (pykml) for container type: ObjectifiedElement ---
+Processing container: 'Test KML Geometries'
+  Child 1: tag='name', type=StringElement
+  Child 2: tag='Folder', type=ObjectifiedElement
+    Found Folder (child 2), recursing...
+--- Inside extract_placemark_geometries_recursive (pykml) for container type: ObjectifiedElement ---
+Processing container: 'Points and Lines'
+  Child 1: tag='name', type=StringElement
+  Child 2: tag='Placemark', type=ObjectifiedElement
+-- Inside get_geometry_from_placemark (pykml) for Placemark --
+Processing Placemark: 'Simple Point' (ID: pm1)
+  Found Point: 10,10,0
+    Added geometry for Placemark: Simple Point - Type: Point
+  Child 3: tag='Placemark', type=ObjectifiedElement
+-- Inside get_geometry_from_placemark (pykml) for Placemark --
+Processing Placemark: 'Simple LineString' (ID: pm2)
+  Found LineString: 11,11,0 12,12,0 13,13,0
+    Added geometry for Placemark: Simple LineString - Type: LineString
+  Finished iterating children of 'Points and Lines'. Total children: 3, Placemarks processed: 2, Folders recursed: 0, Documents recursed: 0
+Finished processing container 'Points and Lines', total geometries collected from this level and below: 2
+  Child 3: tag='Folder', type=ObjectifiedElement
+    Found Folder (child 3), recursing...
+--- Inside extract_placemark_geometries_recursive (pykml) for container type: ObjectifiedElement ---
+Processing container: 'Polygons'
+  Child 1: tag='name', type=StringElement
+  Child 2: tag='Placemark', type=ObjectifiedElement
+-- Inside get_geometry_from_placemark (pykml) for Placemark --
+Processing Placemark: 'Simple Polygon' (ID: pm3)
+    Checking for innerBoundaryIs in Polygon 'Simple Polygon'
+  Found Polygon: Outer present=True, Inner count=0
+    Added geometry for Placemark: Simple Polygon - Type: Polygon
+  Child 3: tag='Placemark', type=ObjectifiedElement
+-- Inside get_geometry_from_placemark (pykml) for Placemark --
+Processing Placemark: 'Polygon with Hole' (ID: pm4)
+    Checking for innerBoundaryIs in Polygon 'Polygon with Hole'
+      Found an innerBoundaryIs element.
+        Extracted coordinates from innerBoundaryIs's LinearRing.
+      Found an innerBoundaryIs element.
+        Extracted coordinates from innerBoundaryIs's LinearRing.
+  Found Polygon: Outer present=True, Inner count=2
+    Added geometry for Placemark: Polygon with Hole - Type: Polygon
+  Finished iterating children of 'Polygons'. Total children: 3, Placemarks processed: 2, Folders recursed: 0, Documents recursed: 0
+Finished processing container 'Polygons', total geometries collected from this level and below: 2
+  Child 4: tag='Placemark', type=ObjectifiedElement
+-- Inside get_geometry_from_placemark (pykml) for Placemark --
+Processing Placemark: 'Placemark with LinearRing directly' (ID: pm5)
+  Found LinearRing directly in Placemark: 1,1,0 2,1,0 2,2,0 1,2,0 1,1,0
+    Added geometry for Placemark: Placemark with LinearRing directly - Type: LinearRing
+  Child 5: tag='Placemark', type=ObjectifiedElement
+-- Inside get_geometry_from_placemark (pykml) for Placemark --
+Processing Placemark: 'Placemark without Geometry' (ID: pm6_no_geom)
+  Placemark 'Placemark without Geometry' (ID: pm6_no_geom) has no directly recognized geometry. Child elements: ['name', 'description']
+    Added geometry for Placemark: Placemark without Geometry - Type: Unknown
+  Finished iterating children of 'Test KML Geometries'. Total children: 5, Placemarks processed: 2, Folders recursed: 2, Documents recursed: 0
+Finished processing container 'Test KML Geometries', total geometries collected from this level and below: 6

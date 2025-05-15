@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Test KML Document Name</name>
+    <Placemark>
+      <name>Test Placemark</name>
+      <Point>
+        <coordinates>37.6173,55.7558,0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>

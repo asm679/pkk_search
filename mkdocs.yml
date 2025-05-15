@@ -1,0 +1,66 @@
+site_name: Кадастр CLI
+site_author: Project Team
+site_description: 'CLI-инструмент для обработки и анализа кадастровых геоданных из KML-файлов.'
+copyright: 'Copyright &copy; 2024 Project Team'
+
+extra:
+  version: "0.1.0"
+
+theme:
+  name: material
+  language: ru # Язык интерфейса темы
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.code.copy
+    # - toc.integrate # Если хотим содержание страницы в левой панели навигации
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_category_heading: true
+            # separate_signature: true # Можно раскомментировать, если хотим сигнатуру отдельно от докстринга
+            # merge_init_into_class: true # Объединить докстринг __init__ с классом
+            # show_signature_annotations: true # Показывать аннотации типов в сигнатуре
+
+nav:
+  - 'Главная': 'index.md'
+  - 'Стандарты Документации': 'DOCUMENTATION_STANDARDS.md'
+  - 'Руководство пользователя':
+    - 'Введение': 'user_guide/introduction.md'
+    - 'Установка': 'user_guide/installation.md'
+    - 'Быстрый старт': 'user_guide/quick_start.md'
+  - 'Руководство разработчика':
+    - 'Обзор': 'developer_guide/overview.md'
+    - 'Архитектура': 'developer_guide/architecture.md'
+  - 'API Справка':
+    - 'KML Парсер': 'api/kml_parser.md'
+    - 'Обработка геометрий': 'api/geometry_processing.md'
+    - 'Структуры данных': 'api/data_structures.md'

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="baze__6_7etap" id="baze__6_7etap">
+	<SimpleField name="fid" type="float"></SimpleField>
+	<SimpleField name="id" type="string"></SimpleField>
+	<SimpleField name="timestamp" type="string"></SimpleField>
+	<SimpleField name="begin" type="string"></SimpleField>
+	<SimpleField name="end" type="string"></SimpleField>
+	<SimpleField name="altitudeMode" type="string"></SimpleField>
+	<SimpleField name="tessellate" type="int"></SimpleField>
+	<SimpleField name="extrude" type="int"></SimpleField>
+	<SimpleField name="visibility" type="int"></SimpleField>
+	<SimpleField name="drawOrder" type="int"></SimpleField>
+	<SimpleField name="icon" type="string"></SimpleField>
+</Schema>
+<Folder><name>baze__6_7etap</name>
+  <Placemark id="baze__6_7etap.1">
+	<name>ось ВСМ</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#baze__6_7etap">
+		<SimpleData name="fid">1</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>37.1379740390606,56.0084730837088 37.1379754680135,56.0084718356551</coordinates></LineString>
+  </Placemark>
+  <Placemark id="baze__6_7etap.2">
+	<name>ось ВСМ</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#baze__6_7etap">
+		<SimpleData name="fid">2</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>35.7531254943185,56.8027736226478 35.76261641,56.800589878 35.768527882,56.79910142 35.774247058,56.79740203 35.779748969,56.795499138 35.849952926,56.76936319 35.862438636,56.765131589 35.875545386,56.761511904 35.888813679,56.758235401 35.89886684,56.755533333 35.908579096,56.752478871 35.942472964,56.740993329 35.95406525,56.737332916 35.966051173,56.73407912 35.978383609,56.731244701 35.991014111,56.728840775 36.003893096,56.726876764 36.01697003,56.725360363 36.030193629,56.724297514 36.043512048,56.723692377 36.057701139,56.723292585 36.072804313,56.722568007 36.087774371,56.721252385 36.102534685,56.719352463 36.117009735,56.716877973 36.131125499,56.713841587 36.142491597,56.71113464 36.158995212,56.707641544 36.175965991,56.704910993 36.193287955,56.702961625 36.246351602,56.698226764 36.261121395,56.696607077 36.275643865,56.694414083 36.289845436,56.691658906 36.303654199,56.68835552 36.317000292,56.684520672 36.329816257,56.680173796 36.342037387,56.675336913 36.398260261,56.651342781 36.406538641,56.647559172 36.414347224,56.643484227 36.421652401,56.639135571 36.42842277,56.634532009 36.434629275,56.629693437 36.440245325,56.62464076 36.450250474,56.614934237 36.458625841,56.605687879 36.465700926,56.596703096 36.470269606,56.590258239 36.473963753,56.583645062 36.497072009,56.536049779 36.501489727,56.528310435 36.507113688,56.520814126 36.528807935,56.495112769 36.532844696,56.489903085 36.536278292,56.484562804 36.53909527,56.47911325 36.541284657,56.473576175 36.542837997,56.467973668 36.543749376,56.46232807 36.544015451,56.456661886 36.543635449,56.45099769 36.542136696,56.438929715 36.541754282,56.432857536 36.54211273,56.426784904 36.543210052,56.420739531 36.54504089,56.414748991 36.547596554,56.408840594 36.550865062,56.403041263 36.554831204,56.397377413 36.559476613,56.391874829 36.564779857,56.386558551 36.570716542,56.38145276 36.5826111444799,56.3719350006514</coordinates></LineString>
+  </Placemark>
+  <Placemark id="baze__6_7etap.3">
+	<name>ось ВСМ</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#baze__6_7etap">
+		<SimpleData name="fid">3</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>35.7530859786985,56.802782714713 35.7531254943185,56.8027736226478</coordinates></LineString>
+  </Placemark>
+  <Placemark id="baze__6_7etap.4">
+	<name>ось ВСМ</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#baze__6_7etap">
+		<SimpleData name="fid">4</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>35.7529690491987,56.8028096187734 35.7530605881768,56.8027885567642</coordinates></LineString>
+  </Placemark>
+  <Placemark id="baze__6_7etap.5">
+	<name>ось ВСМ</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#baze__6_7etap">
+		<SimpleData name="fid">5</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>35.7530605881768,56.8027885567642 35.7530859786985,56.802782714713</coordinates></LineString>
+  </Placemark>
+  <Placemark id="baze__6_7etap.6">
+	<name>ось ВСМ</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#baze__6_7etap">
+		<SimpleData name="fid">6</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <LineString><coordinates>36.5826111444799,56.3719350006514 36.60213179,56.356315075 36.607932286,56.351334285 36.613142427,56.346156479 36.617740816,56.340803167 36.626764062,56.329360057 36.631948845,56.323387815 36.63790588,56.317642554 36.64460288,56.31215508 36.652003634,56.306954805 36.660068209,56.302069587 36.687612109,56.286554484 36.695277484,56.281923327 36.702346967,56.277008032 36.70878681,56.271832232 36.714566328,56.266420803 36.734596345,56.246081353 36.739956372,56.241031502 36.745893274,56.236186143 36.752381804,56.231565704 36.75939442,56.227189656 36.766901398,56.223076433 36.774870967,56.219243358 36.783269435,56.215706566 36.796040514,56.210681336 36.805448408,56.206684814 36.814309276,56.202317809 36.822576381,56.197603458 36.830206175,56.192566726 36.850195219,56.178345927 36.860011574,56.171938357 36.922250678,56.13458689 36.929001314,56.130262062 36.935245725,56.125706546 36.940958856,56.120938762 36.946117821,56.115977979 36.950702001,56.110844236 36.954693121,56.105558267 36.964408224,56.091450671 36.968440026,56.086112771 36.973077276,56.080931004 36.978300527,56.075926829 36.98408793,56.071120961 36.990415326,56.066533286 36.997256352,56.062182779 37.004582547,56.058087428 37.012363473,56.05426416 37.020566845,56.050728772 37.029158657,56.047495868 37.038103329,56.044578796 37.047363849,56.041989597 37.056901928,56.039738958 37.097363578,56.031029378 37.101107967,56.03014541 37.104744867,56.029130556 37.1082597,56.027988886 37.111638383,56.02672498 37.114867379,56.025343906 37.117933762,56.023851203 37.120825256,56.022252854 37.123530293,56.020555269 37.126038059,56.01876525 37.12833853,56.016889972 37.1379740390606,56.0084730837088</coordinates></LineString>
+  </Placemark>
+</Folder>
+</Document></kml>
