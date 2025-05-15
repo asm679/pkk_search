@@ -8,8 +8,10 @@ from scripts.data_structures import (
 # Импортируем функции конвертации и вычислений
 from scripts.geometry_processing import kml_placemark_to_shapely, DEFAULT_PRECISION, calculate_area, calculate_length, calculate_perimeter
 
+from _version import __version__
+
 @click.group(help="Кадастровый инструмент для обработки геоданных.")
-@click.version_option(version='0.1.0', message='%(prog)s version %(version)s')
+@click.version_option(version=__version__, message='%(prog)s version %(version)s')
 def cli():
     """Основная группа команд для кадастрового инструмента."""
     pass

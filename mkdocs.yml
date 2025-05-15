@@ -3,6 +3,9 @@ site_author: Project Team
 site_description: 'CLI-инструмент для обработки и анализа кадастровых геоданных из KML-файлов.'
 copyright: 'Copyright &copy; 2024 Project Team'
 
+extra:
+  version: "0.0.0"
+
 theme:
   name: material
   language: ru # Язык интерфейса темы
