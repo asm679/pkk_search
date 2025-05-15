@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "generatedAt": "2025-05-15T08:16:11.723Z",
+    "tasksAnalyzed": 20,
+    "thresholdScore": 5,
+    "projectName": "Taskmaster",
+    "usedResearch": true
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 5,
+      "taskTitle": "Develop Module for Fetching Cadastral Data from PKK",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the development of the PKK cadastral data fetching module into subtasks covering: 1. API request construction and authenticated connection to PKK. 2. KML geometry-based querying and spatial intersection logic with PKK data. 3. Implementing robust handling for PKK API pagination and rate limits. 4. Parsing diverse PKK API responses to extract mandatory and optional cadastral fields. 5. Comprehensive error handling for network issues, API errors, and unexpected data formats. 6. Designing and implementing an efficient in-memory data structure for fetched cadastral information.",
+      "reasoning": "High complexity due to external API integration (PKK specifics, potential instability), geometric operations, comprehensive data parsing, and robust error handling requirements. Core functionality with many distinct, non-trivial components."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Implement Console Progress Bar for Long Operations",
+      "complexityScore": 3,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down the console progress bar implementation into subtasks for: 1. Research, select, and install a suitable Python progress bar library. 2. Integrate the progress bar with the PKK data fetching loop, updating based on requests or parcels. 3. Design and implement an abstraction layer for the progress bar to facilitate easy integration with other future long-running operations.",
+      "reasoning": "Low to medium complexity. Involves library integration and minor logic changes. Abstraction for future use adds a slight challenge."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Implement Data Saving to CSV Format",
+      "complexityScore": 4,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the CSV data saving implementation into subtasks for: 1. Adding and parsing the `--output-csv <file.csv>` CLI option. 2. Developing logic to flatten hierarchical parcel data for CSV, including a strategy for geometry representation (e.g., WKT). 3. Implementing CSV file writing with appropriate headers using Python's `csv` module. 4. Ensuring the CSV output can be generated simultaneously with other specified output formats without conflict.",
+      "reasoning": "Medium complexity. Involves CLI argument parsing, data transformation (flattening geometry), file I/O, and coordination for simultaneous outputs."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Implement Data Saving to SQLite Database",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the SQLite data saving implementation into subtasks for: 1. Adding and parsing the `--output-sqlite <file.db>` CLI option. 2. Designing an appropriate SQLite database schema (table `parcels` with columns for all relevant data, including geometry). 3. Implementing data insertion logic using Python's `sqlite3` module, including handling geometry storage (WKT or GeoJSON blob). 4. Ensuring the SQLite output can be generated simultaneously with other specified output formats.",
+      "reasoning": "Medium complexity. Involves CLI, database schema design, SQL operations, and specific handling for geometry storage in a relational DB."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Extend PKK Data Fetching for Full Attribute Set",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the extension of PKK data fetching for the full attribute set into subtasks for: 1. Thoroughly re-analyzing PKK API responses (leveraging Task 2 findings) to identify all available attribute fields and their data types. 2. Modifying the data parsing logic in the PKK fetching module (Task 5) to dynamically extract all identified additional fields. 3. Updating the internal data structure to accommodate a flexible and comprehensive set of attributes. 4. Adapting all existing output formats (GeoJSON, CSV, SQLite - Tasks 6, 8, 9) to correctly store and represent these additional attributes, including potential schema updates.",
+      "reasoning": "Medium-high complexity. Requires detailed API re-investigation, significant changes to parsing logic, data structures, and ensuring all output formats can handle potentially numerous and varied new fields."
+    },
+    {
+      "taskId": 11,
+      "taskTitle": "Implement Basic Report Generation in Markdown Format",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down the basic Markdown report generation into subtasks for: 1. Adding and parsing the `--report-md <file.md>` CLI option. 2. Designing the structure and content for a basic, readable Markdown report (summary statistics, parcel list with key attributes). 3. Implementing the logic to iterate through fetched data and format it into the defined Markdown structure.",
+      "reasoning": "Medium complexity. Involves CLI, defining a new output type (report) structure, and data formatting logic for Markdown."
+    },
+    {
+      "taskId": 12,
+      "taskTitle": "Implement Report Templating Mechanism",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the report templating mechanism implementation into subtasks for: 1. Researching, selecting, and integrating a Python templating engine (e.g., Jinja2). 2. Designing and creating a default Markdown report template that replicates the output from FR-17. 3. Adding a CLI option (e.g., `--report-template <template.md>`) to allow users to specify a custom template file. 4. Modifying the report generation logic (Task 11) to utilize the templating engine, passing fetched data and metadata as context to the selected template.",
+      "reasoning": "Medium complexity. Introduces a new dependency (templating engine), requires designing a default template, and abstracting report generation logic to use templates."
+    },
+    {
+      "taskId": 13,
+      "taskTitle": "Implement Additional Report Formats (HTML, PDF, DOCX, XML)",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the implementation of additional report formats into subtasks for: 1. Adding CLI options for each new format (`--report-html`, `--report-pdf`, etc.) and ensuring they can be generated simultaneously. 2. Implementing HTML report generation, likely leveraging the templating system from Task 12. 3. Implementing PDF report generation (e.g., via HTML/Markdown to PDF conversion using WeasyPrint/Pandoc, or direct generation). 4. Implementing DOCX report generation (e.g., using `python-docx` with templates or Pandoc conversion). 5. Defining an XML schema and implementing XML report generation, possibly using templates. 6. Integrating progress updates (Task 7) if generation of these reports is lengthy.",
+      "reasoning": "High complexity. Each format presents unique challenges and may require different libraries/tools (HTML templating, PDF conversion/direct generation, DOCX libraries, XML schema/generation). Managing simultaneous output adds complexity."
+    },
+    {
+      "taskId": 14,
+      "taskTitle": "Implement Basic Interactive Map Generation",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the basic interactive map generation into subtasks for: 1. Adding the `--interactive-map <map.html>` CLI option and selecting a Python wrapper for a JS mapping library (e.g., Folium for Leaflet.js). 2. Implementing logic to create an HTML file with a base map centered on the AOI. 3. Adding the Area of Interest (from KML, Task 4) as a distinct visual layer on the map. 4. Adding fetched parcel geometries (e.g., from GeoJSON, Task 6) as another distinct visual layer, ensuring different styling for AOI and parcel layers (FR-20).",
+      "reasoning": "Medium-high complexity. Involves front-end elements (HTML/JS via Python wrapper), handling geographic data visualization, and layer management."
+    },
+    {
+      "taskId": 15,
+      "taskTitle": "Enhance Interactive Map with Thematic Coloring and Hover Tooltips",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the interactive map enhancements for thematic coloring and tooltips into subtasks for: 1. Adding a CLI parameter (e.g., `--map-color-by <category|use>`) to choose the attribute for thematic coloring. 2. Implementing logic (Python/JS via wrapper) to assign distinct colors to parcels based on the selected attribute's values. 3. Generating and displaying a simple legend for the thematic coloring on the map. 4. Implementing hover tooltips that display mandatory parcel information (cadastral number, category, use) when mousing over a parcel.",
+      "reasoning": "Medium complexity. Builds on the basic map, adding data-driven visualization (thematic mapping) and more interactivity (tooltips), requiring more intricate map configuration."
+    },
+    {
+      "taskId": 16,
+      "taskTitle": "Implement Click-to-Display Full Info Panel on Interactive Map",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down the click-to-display info panel feature for the interactive map into subtasks for: 1. Ensuring full attribute data (from Task 10) is embedded or accessible for each parcel feature on the map. 2. Implementing JavaScript logic (or Folium/library equivalent) to handle click events on parcel features. 3. Designing and implementing a modal window, sidebar panel, or popup that displays all available attributes for the clicked parcel (FR-23).",
+      "reasoning": "Medium-high complexity. Requires passing potentially large amounts of data to the map, handling click events, and dynamically displaying detailed information in a user-friendly panel."
+    },
+    {
+      "taskId": 17,
+      "taskTitle": "Refactor for Modular Input/Output Format Handling (Extensibility)",
+      "complexityScore": 9,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the refactoring for modular I/O handling into subtasks for: 1. Designing abstract base classes or interfaces for AOI readers, data writers (for fetched data), and report writers. 2. Refactoring the existing KML input logic (Task 4) to conform to the new AOI reader interface. 3. Refactoring existing data output modules (GeoJSON, CSV, SQLite - Tasks 6, 8, 9) to conform to the new data writer interface. 4. Refactoring report generation modules (Markdown, and potentially others from Task 13) to conform to the new report writer interface. 5. Implementing a factory pattern or plugin-like mechanism for dynamic registration and selection of available I/O handlers based on CLI options or future auto-detection.",
+      "reasoning": "Very high complexity. This is a major architectural refactoring affecting large parts of the codebase. Designing robust and extensible abstractions (interfaces, factories) requires significant effort and careful planning to maintain existing functionality while improving modularity."
+    },
+    {
+      "taskId": 19,
+      "taskTitle": "Configure CI/CD Pipeline for Automated Testing on GitHub",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the CI/CD pipeline configuration on GitHub Actions into subtasks for: 1. Creating the GitHub Actions workflow file (e.g., `.github/workflows/ci.yml`) with basic structure. 2. Configuring the workflow to set up the correct Python version and install project dependencies (including test dependencies). 3. Adding a step to execute the unit test suite (e.g., using `pytest`) and report results. 4. Configuring the workflow triggers to run on pushes to main/develop branches and on pull requests, as per NFR-7.",
+      "reasoning": "Medium complexity. Requires familiarity with GitHub Actions syntax, YAML, and configuring Python environments for CI. Ensuring tests run correctly and reliably in the CI environment."
+    },
+    {
+      "taskId": 20,
+      "taskTitle": "Create `Директивы.md` and Initialize GitHub Wiki",
+      "complexityScore": 2,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down the task for `Директивы.md` and GitHub Wiki into subtasks for: 1. Creating the `Директивы.md` file in the repository root and populating it with initial key technical decisions, research findings (e.g., from Task 2), and architectural principles. 2. Enabling the GitHub Wiki for the project and creating a basic homepage. 3. Planning and outlining the initial structure for the Wiki (e.g., Home, Setup Guide, User Manual, Architecture Overview, Developer Guide sections) to house detailed project documentation.",
+      "reasoning": "Low complexity. Primarily involves creating documentation files/pages and basic content population/structuring. The planning aspect is light."
+    },
+    {
+      "taskId": 21,
+      "taskTitle": "Develop Initial User Documentation (Installation, User Guide, README)",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the initial user documentation development into subtasks for: 1. Writing a clear `INSTALL.md` or a comprehensive installation section within `README.md` (DOC-1). 2. Developing a `USER_GUIDE.md` (or expanding `README.md`) detailing CLI usage, input KML requirements, all available output formats (data and reports), and practical examples (DOC-2). 3. Significantly enhancing `README.md` to serve as a comprehensive project entry point, including overview, features, badges, screenshots (if applicable), and links to other documentation (DOC-6, DOC-7). 4. Researching and selecting a documentation generation tool (e.g., Sphinx, MkDocs) and outlining a plan for future HTML/PDF outputs (DOC-3), including how to create illustrative material (DOC-8).",
+      "reasoning": "Medium complexity. Writing clear, comprehensive, and user-friendly documentation requires significant effort, covering installation, full CLI usage, and examples. README enhancement can be substantial."
+    },
+    {
+      "taskId": 22,
+      "taskTitle": "Outline Technical Documentation (Developer Guide)",
+      "complexityScore": 3,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down the technical documentation outlining into subtasks for: 1. Creating a `DEVELOPER_GUIDE.md` file or a dedicated section/set of pages in the GitHub Wiki (DOC-4). 2. Detailing a comprehensive outline for the Developer Guide, including sections like Project Architecture, Module Descriptions, Internal APIs, Development Environment Setup, Coding Standards, Contribution Guidelines (including adding new formats), and Testing Strategy. 3. Planning for future generation of structured HTML/PDF developer documentation (DOC-5) using a chosen tool, and how to incorporate illustrative material (DOC-8).",
+      "reasoning": "Low to medium complexity. Focus is on planning and structuring the content for developers, not full writing. Requires thoughtful consideration of topics important for contributors."
+    },
+    {
+      "taskId": 23,
+      "taskTitle": "Implement Changelog and GitHub Issue Management Process",
+      "complexityScore": 3,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the changelog and issue management setup into subtasks for: 1. Creating `CHANGELOG.md` following a standard format (e.g., Keep a Changelog) and documenting its update process (NFR-11). 2. Defining and documenting the process for using GitHub Issues for bug tracking and feature requests (NFR-12), including labeling, assignment, and closure with proper comments (NFR-13). 3. Creating or updating `CONTRIBUTING.md` to include guidelines for contributions, development setup, and the issue management process. 4. Creating or updating `CODE_OF_CONDUCT.md` (DOC-6).",
+      "reasoning": "Low to medium complexity. Involves creating standard project files and clearly documenting team processes. Adherence and practice are key but setup is straightforward."
+    },
+    {
+      "taskId": 24,
+      "taskTitle": "Research and Plan Interactive Map Performance Optimization",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the research and planning for interactive map performance optimization into subtasks for: 1. Researching common techniques for rendering large geographic datasets in web maps (e.g., vector tiles, clustering, simplification, on-demand loading). 2. Analyzing the capabilities and limitations of the chosen mapping library (Leaflet/Folium) concerning these performance techniques. 3. Documenting potential optimization strategies, their pros/cons, and implementation considerations in `Директивы.md` or a dedicated design note (FR-24). 4. Optionally, creating a test case with a large (synthetic if necessary) dataset to benchmark current map performance as a baseline.",
+      "reasoning": "Medium complexity. Primarily a research and documentation task, but the subject matter (geospatial performance optimization) can be complex. Benchmarking adds a practical element."
+    },
+    {
+      "taskId": 25,
+      "taskTitle": "High-Level Design for Future GUI Integration",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down the high-level design for future GUI integration into subtasks for: 1. Reviewing the current application architecture (especially after Task 17 refactoring) to confirm and document clear separation between core logic (data fetching, processing) and the CLI presentation layer. 2. Defining how the core logic should be exposed as a callable library/API, suitable for consumption by a separate GUI application. 3. Documenting high-level considerations for GUI components' interaction with this core API, including how the GUI's map engine (UI-4) would integrate with data and interactive features (FR-25), to be recorded in `Директивы.md` or an architecture document.",
+      "reasoning": "Medium complexity. Requires architectural thinking and foresight to ensure the current CLI app's design facilitates future GUI development without major rewrites. Focus is on design and documentation."
+    },
+    {
+      "taskId": 28,
+      "taskTitle": "Integrate Documentation Generation into Workflow for Major Features",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the integration of documentation generation into the development workflow into subtasks for: 1. Defining and documenting clear criteria for what constitutes a 'Major Feature' or 'Significant Change' that mandates documentation creation/updates. 2. Modifying project workflow artifacts: update the 'Definition of Done' (DoD) for tasks/stories and enhance Pull Request (PR) templates with a documentation checklist. 3. Formally defining and documenting the step-by-step documentation process: timing, responsibilities for drafting/reviewing/approving, locations, and tool usage (referencing Task 26 outputs). 4. Developing and delivering training materials or a workshop to communicate the new process, standards, and tool usage to the development team. 5. Establishing a periodic review mechanism (e.g., quarterly) to assess the effectiveness of the documentation process and make iterative improvements.",
+      "reasoning": "Medium-high complexity. This is a significant process engineering task. Defining, integrating, and ensuring adoption of a new workflow across a team requires careful planning, clear communication, and change management. The detailed description implies multiple facets to implement correctly."
+    }
+  ]
+}

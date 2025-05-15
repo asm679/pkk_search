@@ -10,10 +10,15 @@ from scripts.data_structures import (
 from scripts.geometry_processing import (
     kml_placemark_to_shapely, DEFAULT_PRECISION, 
     calculate_area, calculate_length, calculate_perimeter,
-    create_geojson_feature, save_geojson_feature_collection
+    create_geojson_feature, save_geojson_feature_collection,
+    GEOGRAPHIC_CRS_WGS84, DEFAULT_PLANAR_CRS
 )
-
+# Импорты для новой команды
+from scripts.pkk_api_client import search_cadastral_data_by_text, parse_nspd_feature
+from scripts.geometry_processing import nspd_geometry_to_shapely
+# _version должен быть в корне проекта или доступен в PYTHONPATH
 from _version import __version__
+import json
 
 @click.group(help="Кадастровый инструмент для обработки геоданных.")
 @click.version_option(version=__version__, message='%(prog)s version %(version)s')
@@ -23,7 +28,7 @@ def cli():
 
 @cli.command("process-kmls")
 @click.option('-k', '--kml-files', 'kml_files', 
-              type=click.Path(exists=True, dir_okay=False, readable=True),
+              type=click.Path(dir_okay=False, readable=True),
               multiple=True, required=True, help='Path to one or more KML files to process.')
 @click.option('--output-geojson', 'output_geojson_path',
               type=click.Path(dir_okay=False, writable=True, resolve_path=True),
@@ -36,6 +41,11 @@ def process_kmls(kml_files, output_geojson_path, geojson_indent):
     click.echo(f"Received {len(kml_files)} KML file(s) to process.")
 
     for kml_file_path in kml_files:
+        # Ручная проверка существования файла
+        if not os.path.exists(kml_file_path):
+            click.echo(click.style(f"  Error: KML file not found: {kml_file_path}", fg='red'))
+            continue # Переход к следующему файлу, если этот не найден
+
         click.echo(click.style(f"\n--- Processing KML file: {kml_file_path} ---", fg='cyan'))
         
         kml_root = load_kml_file(kml_file_path)
@@ -190,6 +200,108 @@ def process_kmls(kml_files, output_geojson_path, geojson_indent):
 # @cli.command(name="another_command")
 # def another():
 #     pass
+
+# >>> Новая команда для работы с API PKK (НСПД)
+@cli.command("search-pkk")
+@click.option("-q", "--query-text", required=True, help="Кадастровый номер или текстовый запрос для поиска на ПКК (НСПД).")
+@click.option("--raw-output", is_flag=True, help="Вывести полный сырой JSON ответ от API (если применимо к этапу).")
+@click.option("--shapely-wkt", is_flag=True, help="Вывести геометрию в формате WKT (если доступно).")
+@click.option("--no-metrics", is_flag=True, help="Не рассчитывать и не выводить геометрические метрики (площадь, периметр).")
+def search_pkk(query_text: str, raw_output: bool, shapely_wkt: bool, no_metrics: bool):
+    """Поиск объектов на Публичной Кадастровой Карте (через API НСПД)."""
+    click.echo(f"Выполняется поиск по запросу: '{query_text}'...")
+
+    parsed_features, error = search_cadastral_data_by_text(query_text)
+
+    if error:
+        click.secho(f"Ошибка при выполнении запроса: {error}", fg="red")
+        return
+
+    if not parsed_features:
+        click.secho(f"Объекты по запросу '{query_text}' не найдены.", fg="yellow")
+        return
+
+    click.secho(f"Найдено объектов: {len(parsed_features)}", fg="green")
+
+    if raw_output:
+        click.echo("--- Сырой ответ (распарсенные features) ---")
+        # parsed_features это список датаклассов, для raw вывода лучше использовать их raw_feature_dict
+        raw_dicts = [feat.raw_feature_dict for feat in parsed_features if feat and feat.raw_feature_dict]
+        if raw_dicts:
+            try:
+                click.echo(json.dumps(raw_dicts, indent=2, ensure_ascii=False))
+            except TypeError as e:
+                click.secho(f"Ошибка сериализации сырых данных: {e}", fg="red")
+                click.echo("Попытка вывода каждого объекта отдельно:")
+                for i, raw_dict in enumerate(raw_dicts):
+                    try:
+                        click.echo(f"Объект {i+1}:")
+                        click.echo(json.dumps(raw_dict, indent=2, ensure_ascii=False))
+                    except TypeError:
+                        click.echo(f"  Не удалось сериализовать объект {i+1}")
+        else:
+            click.echo("Сырые данные для вывода отсутствуют.")
+        return # При raw_output дальше не идем
+
+    for i, feature in enumerate(parsed_features):
+        click.echo(f"\n--- Объект {i + 1} ---")
+        if not feature: # На случай, если в списке оказался None после парсинга
+            click.secho("  Ошибка: Некорректные данные объекта.", fg="red")
+            continue
+
+        # Вывод основной информации
+        if feature.main_properties:
+            click.echo(f"  ID объекта (НСПД): {feature.nspd_id}")
+            click.echo(f"  Тип: {feature.main_properties.categoryName if feature.main_properties.categoryName else 'N/A'}")
+            click.echo(f"  Описание/КН: {feature.main_properties.descr if feature.main_properties.descr else 'N/A'}")
+            click.echo(f"  Метка: {feature.main_properties.label if feature.main_properties.label else 'N/A'}")
+        
+        if feature.options_properties:
+            click.echo(f"  Кадастровый номер (из options): {feature.options_properties.cad_num if feature.options_properties.cad_num else 'N/A'}")
+            click.echo(f"  Адрес: {feature.options_properties.readable_address if feature.options_properties.readable_address else 'N/A'}")
+            area_from_attrs = feature.options_properties.area
+            if area_from_attrs is not None:
+                click.echo(f"  Площадь (из атрибутов): {area_from_attrs}") # Единицы могут быть разные или отсутствовать
+            cost = feature.options_properties.cost_value
+            if cost is not None:
+                click.echo(f"  Кадастровая стоимость: {cost}")
+            status = feature.options_properties.status
+            if status:
+                click.echo(f"  Статус (из атрибутов): {status}")
+            reg_date = feature.options_properties.registration_date
+            if reg_date:
+                click.echo(f"  Дата регистрации/учета: {reg_date}")
+
+        # Геометрия и метрики
+        if feature.geometry:
+            source_crs = feature.geometry.crs.name if feature.geometry.crs else DEFAULT_PLANAR_CRS
+            click.echo(f"  Тип геометрии (НСПД): {feature.geometry.type}, CRS: {source_crs}")
+            
+            shapely_object = nspd_geometry_to_shapely(feature.geometry)
+            if shapely_object:
+                click.echo(f"  Конвертировано в Shapely: {shapely_object.geom_type}, Валидность: {shapely_object.is_valid}")
+                if shapely_wkt:
+                    try:
+                        click.echo(f"    WKT: {shapely_object.wkt}")
+                    except Exception as e:
+                        click.secho(f"    Ошибка при генерации WKT: {e}", fg="red")
+
+                if not no_metrics:
+                    area_calc = calculate_area(shapely_object, source_crs_str=source_crs, target_planar_crs_str=DEFAULT_PLANAR_CRS)
+                    # length_calc = calculate_length(shapely_object, source_crs_str=source_crs, target_planar_crs_str=DEFAULT_PLANAR_CRS)
+                    perimeter_calc = calculate_perimeter(shapely_object, source_crs_str=source_crs, target_planar_crs_str=DEFAULT_PLANAR_CRS)
+                    
+                    if area_calc is not None:
+                        click.echo(f"    Расчетная площадь: {area_calc:.2f} кв.м (в CRS: {DEFAULT_PLANAR_CRS})")
+                    # Длина имеет смысл в основном для линий, для полигонов есть периметр
+                    # if length_calc is not None and shapely_object.geom_type not in ["Polygon", "MultiPolygon"]:
+                    #    click.echo(f"    Расчетная длина: {length_calc:.2f} м. (в CRS: {DEFAULT_PLANAR_CRS})")
+                    if perimeter_calc is not None: # and shapely_object.geom_type in ["Polygon", "MultiPolygon"]:
+                        click.echo(f"    Расчетный периметр: {perimeter_calc:.2f} м. (в CRS: {DEFAULT_PLANAR_CRS})")
+            else:
+                click.secho("  Не удалось конвертировать геометрию в Shapely.", fg="yellow")
+        else:
+            click.echo("  Геометрия отсутствует в данных объекта.")
 
 if __name__ == '__main__':
     cli(prog_name="kadastr_cli.py") 

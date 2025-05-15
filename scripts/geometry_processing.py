@@ -10,7 +10,9 @@ import json
 from scripts.data_structures import (
     PointGeom as KmlPoint, LineStringGeom as KmlLineString, LinearRingGeom as KmlLinearRing, 
     PolygonGeom as KmlPolygon, MultiGeometryGeom as KmlMultiGeometry, ExtractedPlacemark, 
-    SubGeometryData
+    SubGeometryData,
+    # Добавляем датакласс для геометрии НСПД
+    NSPDCadastralObjectGeometry 
 )
 
 DEFAULT_PRECISION = 6 # Количество знаков после запятой для округления координат
@@ -159,6 +161,141 @@ def kml_placemark_to_shapely(kml_placemark: ExtractedPlacemark, precision: int =
             
     except Exception as e:
         # print(f"Error converting KML geometry to Shapely for placemark '{kml_placemark.name}': {e}")
+        # import traceback
+        # traceback.print_exc()
+        return None
+
+def nspd_geometry_to_shapely(nspd_geom_data: Optional[NSPDCadastralObjectGeometry]) -> Optional[BaseGeometry]:
+    """
+    Конвертирует объект NSPDCadastralObjectGeometry (из ответа API НСПД)
+    в соответствующий объект Shapely.
+    Координаты из API НСПД приходят как списки/вложенные списки чисел.
+    Предполагается, что Z-координаты (если есть) отбрасываются для 2D Shapely объектов.
+
+    Args:
+        nspd_geom_data: Объект NSPDCadastralObjectGeometry.
+
+    Returns:
+        Объект Shapely или None, если геометрия отсутствует или не может быть сконвертирована.
+    """
+    if not nspd_geom_data or not nspd_geom_data.type or not nspd_geom_data.coordinates:
+        return None
+
+    geom_type = nspd_geom_data.type
+    # Координаты уже должны быть числами (float или int) в списках
+    raw_coords = nspd_geom_data.coordinates 
+
+    try:
+        if geom_type == "Point":
+            # Ожидаем [x, y] или [x, y, z]
+            if isinstance(raw_coords, list) and len(raw_coords) >= 2:
+                return Point(raw_coords[0], raw_coords[1]) # Берем только x, y
+            else:
+                print(f"Warning: Invalid coordinates for Point: {raw_coords}")
+                return None
+
+        elif geom_type == "LineString":
+            # Ожидаем список точек [[x1,y1], [x2,y2], ...]
+            if isinstance(raw_coords, list) and all(isinstance(p, list) and len(p) >= 2 for p in raw_coords):
+                coords_2d = [(p[0], p[1]) for p in raw_coords]
+                return LineString(coords_2d) if len(coords_2d) >= 2 else None
+            else:
+                print(f"Warning: Invalid coordinates for LineString: {raw_coords}")
+                return None
+        
+        elif geom_type == "Polygon":
+            # Ожидаем список колец [[[x1,y1], [x2,y2], ...], [[ix1,iy1], ...]]
+            # Первое кольцо - внешнее, остальные - внутренние (дырки)
+            if not (isinstance(raw_coords, list) and len(raw_coords) > 0):
+                print(f"Warning: Invalid coordinates structure for Polygon: {raw_coords}")
+                return None
+
+            shell_coords_raw = raw_coords[0]
+            if not (isinstance(shell_coords_raw, list) and all(isinstance(p, list) and len(p) >= 2 for p in shell_coords_raw)):
+                print(f"Warning: Invalid shell coordinates for Polygon: {shell_coords_raw}")
+                return None
+            shell_2d = [(p[0], p[1]) for p in shell_coords_raw]
+            if len(shell_2d) < 3: return None # Полигон должен иметь хотя бы 3 точки
+            
+            holes_2d = []
+            if len(raw_coords) > 1:
+                for hole_coords_raw in raw_coords[1:]:
+                    if not (isinstance(hole_coords_raw, list) and all(isinstance(p, list) and len(p) >= 2 for p in hole_coords_raw)):
+                        print(f"Warning: Invalid hole coordinates for Polygon: {hole_coords_raw}")
+                        continue # Пропускаем некорректное кольцо дырки
+                    hole_single_2d = [(p[0], p[1]) for p in hole_coords_raw]
+                    if len(hole_single_2d) >= 3:
+                        holes_2d.append(hole_single_2d)
+            
+            return Polygon(shell_2d, holes_2d if holes_2d else None)
+
+        elif geom_type == "MultiPoint":
+            # Ожидаем список точек [[x1,y1], [x2,y2], ...]
+            if isinstance(raw_coords, list) and all(isinstance(p, list) and len(p) >= 2 for p in raw_coords):
+                points_2d = [(p[0], p[1]) for p in raw_coords]
+                return MultiPoint(points_2d) if points_2d else None
+            else:
+                print(f"Warning: Invalid coordinates for MultiPoint: {raw_coords}")
+                return None
+
+        elif geom_type == "MultiLineString":
+            # Ожидаем список LineString-ов [[[x1,y1], [x2,y2]], [[lx1,ly1], ...]]
+            if not (isinstance(raw_coords, list) and all(isinstance(ls, list) for ls in raw_coords)):
+                print(f"Warning: Invalid coordinates structure for MultiLineString: {raw_coords}")
+                return None
+            mls_parts = []
+            for ls_coords_raw in raw_coords:
+                if isinstance(ls_coords_raw, list) and all(isinstance(p, list) and len(p) >= 2 for p in ls_coords_raw):
+                    coords_2d = [(p[0], p[1]) for p in ls_coords_raw]
+                    if len(coords_2d) >= 2:
+                        mls_parts.append(LineString(coords_2d))
+            return MultiLineString(mls_parts) if mls_parts else None
+        
+        elif geom_type == "MultiPolygon":
+            # Ожидаем список полигонов, каждый полигон это список колец.
+            # [[ [[shell_x1,y1], ...], [[hole_x1,y1], ...] ], [ [[shell2_x1,y1], ... ] ]] 
+            if not (isinstance(raw_coords, list) and all(isinstance(poly_rings, list) for poly_rings in raw_coords)):
+                print(f"Warning: Invalid coordinates structure for MultiPolygon: {raw_coords}")
+                return None
+            
+            mp_parts = []
+            for poly_rings_raw in raw_coords:
+                if not (isinstance(poly_rings_raw, list) and len(poly_rings_raw) > 0):
+                    print(f"Warning: Invalid polygon rings structure in MultiPolygon: {poly_rings_raw}")
+                    continue
+                
+                shell_coords_raw_mp = poly_rings_raw[0]
+                if not (isinstance(shell_coords_raw_mp, list) and all(isinstance(p, list) and len(p) >= 2 for p in shell_coords_raw_mp)):
+                    print(f"Warning: Invalid shell coordinates in MultiPolygon part: {shell_coords_raw_mp}")
+                    continue
+                shell_2d_mp = [(p[0], p[1]) for p in shell_coords_raw_mp]
+                if len(shell_2d_mp) < 3: continue
+
+                holes_2d_mp = []
+                if len(poly_rings_raw) > 1:
+                    for hole_coords_raw_mp in poly_rings_raw[1:]:
+                        if not (isinstance(hole_coords_raw_mp, list) and all(isinstance(p, list) and len(p) >= 2 for p in hole_coords_raw_mp)):
+                            print(f"Warning: Invalid hole coordinates in MultiPolygon part: {hole_coords_raw_mp}")
+                            continue
+                        hole_single_2d_mp = [(p[0], p[1]) for p in hole_coords_raw_mp]
+                        if len(hole_single_2d_mp) >= 3:
+                            holes_2d_mp.append(hole_single_2d_mp)
+                
+                mp_parts.append(Polygon(shell_2d_mp, holes_2d_mp if holes_2d_mp else None))
+            return MultiPolygon(mp_parts) if mp_parts else None
+        
+        # TODO: GeometryCollection - если НСПД API может их возвращать, нужно будет обработать
+        # Примерная структура для GeometryCollection: список словарей, где каждый словарь - это feature-like объект
+        # { "type": "Polygon", "coordinates": [...] } или { "type": "Point", "coordinates": [...] }
+        # Если API возвращает GeometryCollection, то `nspd_geom_data.coordinates` будет списком таких словарей.
+        # Потребуется рекурсивный вызов или адаптация этой функции.
+
+        else:
+            print(f"Warning: Unsupported NSPD geometry type: {geom_type}")
+            return None
+            
+    except Exception as e:
+        print(f"Error converting NSPD geometry to Shapely (type: {geom_type}): {e}. Coords: {raw_coords}")
         # import traceback
         # traceback.print_exc()
         return None
