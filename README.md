@@ -1,6 +1,6 @@
 # Проект "Кадастр CLI"
 
-[![Статус сборки](https://github.com/asm679/pkk_search/actions/workflows/python-app.yml/badge.svg?branch=develop)](https://github.com/asm679/pkk_search/actions/workflows/python-app.yml) [![codecov](https://codecov.io/gh/asm679/pkk_search/graph/badge.svg?token=K7DPVHQTWR)](https://codecov.io/gh/asm679/pkk_search) [![Python Versions](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org) [![Лицензия: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Статус проекта: Активная разработка](https://img.shields.io/badge/status-active-green.svg)](https://github.com/asm679/pkk_search/pulse)
+[![Статус сборки](https://github.com/asm679/pkk_search/actions/workflows/python-app.yml/badge.svg)](https://github.com/asm679/pkk_search/actions/workflows/python-app.yml) [![codecov](https://codecov.io/gh/asm679/pkk_search/graph/badge.svg?token=K7DPVHQTWR)](https://codecov.io/gh/asm679/pkk_search) [![Python Versions](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org) [![Лицензия: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Статус проекта: Активная разработка](https://img.shields.io/badge/status-active-green.svg)](https://github.com/asm679/pkk_search/pulse)
 
 Командная утилита (CLI) на Python для обработки и анализа геоданных из KML-файлов, с акцентом на кадастровую информацию.
 
