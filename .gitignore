@@ -80,6 +80,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+test_results.txt # Результаты тестовых запусков
 
 # Translations
 *.mo
@@ -141,7 +142,9 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
+/site/
+.cache/
+mkdocs.yml.bak # Резервные копии mkdocs.yml
 
 # mypy
 .mypy_cache/

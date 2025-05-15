@@ -1,0 +1,9 @@
+click>=8.0
+fastkml>=0.11
+lxml>=4.0
+pykml
+shapely
+pyproj
+mkdocs
+mkdocs-material
+mkdocstrings[python] 
