@@ -4,7 +4,7 @@ site_description: 'CLI-инструмент для обработки и ана�
 copyright: 'Copyright &copy; 2024 Project Team'
 
 extra:
-  version: "0.0.1"
+  version: "0.1.0"
 
 theme:
   name: material
